@@ -9,10 +9,10 @@
 import { SorobanRpc, Keypair, Account, xdr, scValToNative } from '@stellar/stellar-sdk';
 import type {
   DisputeRecord,
-  DisputeStatus,
   NetworkConfig,
   TransactionResult,
 } from '../types/index';
+import { DisputeStatus } from '../types/index';
 import { addressToScVal, bigintToScVal, boolToScVal, scValToBoolean } from '../utils/scval';
 import { buildContractCall, submitTransaction } from '../utils/transaction';
 import { parseSorobanError, VeriTixError, VeriTixErrorCode } from '../utils/errors';
@@ -95,20 +95,10 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
-    if (!returnValue) {
+    if (!returnValue || returnValue.switch() === xdr.ScValType.scvVoid()) {
       return null;
-    }
-
-    if (returnValue.switch() === xdr.ScValType.scvOption()) {
-      const option = returnValue.option();
-      if (!option || !option.value()) {
-        return null;
-      }
-      return parseDisputeRecord(option.value());
     }
 
     return parseDisputeRecord(returnValue);
@@ -147,9 +137,7 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue) {
       return false;
@@ -188,9 +176,7 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue) {
       return [];
@@ -239,9 +225,7 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue) {
       return [];
@@ -298,9 +282,7 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue) {
       return [];
@@ -328,6 +310,8 @@ export class DisputeModule {
     });
   }
 
+  /**
+   * Opens a dispute against an escrow, freezing funds until resolved.
    *
    * @param escrowId - The escrow ID to raise a dispute on.
    * @param resolver - Stellar account address of the designated resolver.
@@ -370,7 +354,7 @@ export class DisputeModule {
         addressToScVal(claimant),
         bigintToScVal(escrowId, 'u64'),
         addressToScVal(resolver),
-        xdr.ScVal.scvBytes(Array.from(evidenceBytes)),
+        xdr.ScVal.scvBytes(Buffer.from(evidenceBytes)),
       ],
       this.config.networkPassphrase,
     );
@@ -381,9 +365,7 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
     const assembled = SorobanRpc.assembleTransaction(tx, raw).build();
     const result = await submitTransaction(this.server, assembled, this.keypair);
@@ -449,7 +431,7 @@ export class DisputeModule {
         addressToScVal(resolver),
         bigintToScVal(disputeId, 'u64'),
         boolToScVal(forBeneficiary),
-        xdr.ScVal.scvBytes(Array.from(noteBytes)),
+        xdr.ScVal.scvBytes(Buffer.from(noteBytes)),
       ],
       this.config.networkPassphrase,
     );
@@ -460,9 +442,7 @@ export class DisputeModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result
-        ? raw.result.retval
-        : undefined;
+      (raw as any).result?.retval;
 
     const assembled = SorobanRpc.assembleTransaction(tx, raw).build();
     const result = await submitTransaction(this.server, assembled, this.keypair);

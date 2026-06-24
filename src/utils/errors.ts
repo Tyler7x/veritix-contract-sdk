@@ -63,6 +63,8 @@ export enum VeriTixErrorCode {
   // — Token -----------------------------------------------------------------
   /** Transfer or mint amount must be greater than zero */
   InvalidAmount = 'INVALID_AMOUNT',
+  InsufficientBalance = 'INSUFFICIENT_BALANCE',
+  Unauthorized = 'UNAUTHORIZED',
 
   // — Catch-all and client-side validation --------------------------------
   /** Raw panic string could not be mapped to a known code */
@@ -155,7 +157,7 @@ const PANIC_MAP: ReadonlyArray<[pattern: string, code: VeriTixErrorCode]> = [
   // Token / balance — must come after the more-specific "escrow unauthorized"
   // and "admin unauthorized" entries so those match first.
   ['insufficient balance',    VeriTixErrorCode.InsufficientBalance],
-  ['not authorized',          VeriTixErrorCode.Unauthorized],
+  ['not authorized',          VeriTixErrorCode.EscrowUnauthorized],
 ];
 
 // ---------------------------------------------------------------------------
@@ -205,7 +207,7 @@ function extractRawString(raw: unknown): string {
   if (typeof raw === 'string') return raw;
   if (raw instanceof Error) return raw.message;
   try {
-    return JSON.stringify(raw);
+    return JSON.stringify(raw) ?? String(raw);
   } catch {
     return String(raw);
   }
@@ -232,6 +234,8 @@ function buildMessage(code: VeriTixErrorCode, rawStr: string): string {
     [VeriTixErrorCode.ContractPaused]:              'Contract is currently paused by the administrator.',
     [VeriTixErrorCode.InsufficientAllowance]:       'Spender allowance is insufficient for the requested transfer amount.',
     [VeriTixErrorCode.InvalidAmount]:               'Amount must be greater than zero.',
+    [VeriTixErrorCode.InsufficientBalance]:         'Token balance is insufficient for this operation.',
+    [VeriTixErrorCode.Unauthorized]:                'Caller is not authorised for this operation.',
     [VeriTixErrorCode.Unknown]:                     `Unrecognised contract error: ${rawStr}`,
     [VeriTixErrorCode.ConnectionFailed]:            'Failed to connect to the Soroban RPC endpoint.',
     [VeriTixErrorCode.BatchTooLarge]:               'Batch request exceeded maximum allowed size (50 items).',

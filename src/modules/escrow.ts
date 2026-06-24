@@ -7,7 +7,6 @@
  */
 
 import { SorobanRpc, Keypair, Account, xdr, Address } from '@stellar/stellar-sdk';
-import { SorobanRpc, Keypair, Account, xdr } from '@stellar/stellar-sdk';
 import type {
   EscrowRecord,
   NetworkConfig,
@@ -19,10 +18,6 @@ import { addressToScVal, bigintToScVal, scValToBigint, stringToScVal } from '../
 import { buildContractCall, submitTransaction } from '../utils/transaction';
 import { parseSorobanError, VeriTixError, VeriTixErrorCode } from '../utils/errors';
 import { parseEscrowRecord } from '../utils/parsers';
-import { VeriTixError, VeriTixErrorCode } from '../utils/errors';
-import { buildContractCall, submitTransaction } from '../utils/transaction';
-import { bigintToScVal } from '../utils/scval';
-import { parseSorobanError } from '../utils/errors';
 
 /**
  * Parameters required to create a new escrow.
@@ -91,18 +86,10 @@ export class EscrowModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result ? raw.result.retval : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue || returnValue.switch() === xdr.ScValType.scvVoid()) {
       return null;
-    }
-
-    if (returnValue.switch() === xdr.ScValType.scvOption()) {
-      const option = returnValue.option();
-      if (!option || !option.value()) {
-        return null;
-      }
-      return parseEscrowRecord(option.value());
     }
 
     return parseEscrowRecord(returnValue);
@@ -195,6 +182,9 @@ export class EscrowModule {
    */
   private async getEscrowsBatchFallback(ids: bigint[]): Promise<(EscrowRecord | null)[]> {
     return Promise.all(ids.map((id) => this.getEscrow(id)));
+  }
+
+  /**
    * Checks if an escrow has been settled (released or refunded).
    *
    * @param id - Numeric escrow identifier.
@@ -311,7 +301,7 @@ export class EscrowModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result ? raw.result.retval : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue) {
       throw new Error('EscrowModule.createEscrow: missing escrow ID in simulation result');
@@ -393,7 +383,7 @@ export class EscrowModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result ? raw.result.retval : undefined;
+      (raw as any).result?.retval;
 
     if (!returnValue || returnValue.switch() === xdr.ScValType.scvVoid()) {
       return [];
@@ -403,7 +393,7 @@ export class EscrowModule {
       throw new Error(`EscrowModule.${method}: expected ScvVec result`);
     }
 
-    return (returnValue.vec() ?? []).map((item) => scValToBigint(item));
+    return (returnValue.vec() ?? []).map((item: xdr.ScVal) => scValToBigint(item));
   }
 
   private async settleEscrow(
@@ -444,7 +434,7 @@ export class EscrowModule {
     }
 
     const returnValue =
-      SorobanRpc.Api.isSimulationSuccess(raw) && raw.result ? raw.result.retval : undefined;
+      (raw as any).result?.retval;
 
     const assembled = SorobanRpc.assembleTransaction(tx, raw).build();
     const result = await submitTransaction(this.server, assembled, this.keypair);

@@ -223,6 +223,10 @@ export interface RevenueSplitParams {
   totalAmount: bigint;
 }
 
+/**
+ * Minimal representation of a submitted Stellar transaction result.
+ */
+export interface TransactionResult {
   /** Stellar transaction hash (hex-encoded) */
   hash: string;
   /** Final ledger sequence in which the transaction was included */
@@ -264,4 +268,12 @@ export interface FeeEstimate {
   feeXLM: string;
   /** The latest ledger sequence at the time of estimation */
   estimatedLedger: number;
+}
+
+/**
+ * Result of a client-side validation check.
+ */
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
 }

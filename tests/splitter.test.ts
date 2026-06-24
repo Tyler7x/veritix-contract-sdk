@@ -1,3 +1,6 @@
+import { Keypair } from '@stellar/stellar-sdk';
+import { VeriTixClient } from '../src/client';
+import { getTestnetConfig } from '../src/utils/network';
 import { VeriTixError, VeriTixErrorCode } from '../src/utils/errors';
 
 const FAKE_CONTRACT = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4';

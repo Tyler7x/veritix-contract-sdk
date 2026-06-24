@@ -37,11 +37,6 @@ function addressToScVal(address: string): xdr.ScVal {
   return Address.fromString(address).toScVal();
 }
 
-import { SorobanRpc, Keypair, Address, nativeToScVal, xdr } from '@stellar/stellar-sdk';
-import type { NetworkConfig, TransactionResult } from '../types/index';
-import { buildContractCall, simulateTransaction, submitTransaction } from '../utils/transaction';
-import { VeriTixError, VeriTixErrorCode } from '../utils/errors';
-import { Account } from '@stellar/stellar-sdk';
 
 /**
  * Parameters for minting new tokens.
@@ -442,116 +437,5 @@ export class TokenModule {
       nativeToScVal(params.amount, { type: 'i128' }),
       nativeToScVal(params.expirationLedger, { type: 'u32' }),
     ]);
-   * Transfers tokens from the caller's account to `to`.
-   *
-   * The caller is derived from `this.keypair`; `params.from` is encoded as
-   * the first contract argument per the SEP-41 `transfer(from, to, amount)`
-   * interface.
-   *
-   * @param params - {@link TransferParams}
-   * @returns A {@link TransactionResult} on success.
-   * @throws {Error} If no keypair was provided (read-only client).
-   * @throws {VeriTixError} With code `INVALID_AMOUNT` if `amount` is not > 0.
-   *
-   * @example
-   * ```ts
-   * await client.token.transfer({
-   *   from: keypair.publicKey(),
-   *   to: 'GXYZ…',
-   *   amount: 1_000_000n,
-   * });
-   * ```
-   */
-  async transfer(params: TransferParams): Promise<TransactionResult> {
-    if (!this.keypair) {
-      throw new Error('TokenModule.transfer: a Keypair is required for write operations');
-    }
-
-    if (params.amount <= 0n) {
-      throw new VeriTixError(
-        VeriTixErrorCode.InvalidAmount,
-        'Amount must be greater than zero.',
-      );
-    }
-
-    const sourceAccount = new Account(this.keypair.publicKey(), '0');
-
-    const args = [
-      nativeToScVal(Address.fromString(params.from), { type: 'address' }),
-      nativeToScVal(Address.fromString(params.to),   { type: 'address' }),
-      nativeToScVal(params.amount,                   { type: 'i128' }),
-    ];
-
-    const tx = await buildContractCall(
-      this.server,
-      sourceAccount,
-      this.config.contractId,
-      'transfer',
-      args,
-      this.config.networkPassphrase,
-    );
-
-    const { transaction } = await simulateTransaction(this.server, tx);
-    return submitTransaction(this.server, transaction, this.keypair);
-  }
-
-  /**
-   * Approves `spender` to transfer up to `amount` tokens on behalf of the
-   * caller (derived from `this.keypair`).
-   *
-   * The `expirationLedger` must be strictly greater than the current ledger
-   * sequence; passing a value in the past throws immediately without hitting
-   * the network.
-   *
-   * @param params - {@link ApproveParams}
-   * @returns A {@link TransactionResult} on success.
-   * @throws {Error} If no keypair was provided (read-only client).
-   * @throws {VeriTixError} With code `UNKNOWN` if `expirationLedger` is not in the future.
-   *
-   * @example
-   * ```ts
-   * const currentLedger = await client.getCurrentLedger();
-   * await client.token.approve({
-   *   from: keypair.publicKey(),
-   *   spender: 'GXYZ…',
-   *   amount: 1_000_000n,
-   *   expirationLedger: currentLedger + 17_280, // ~1 day
-   * });
-   * ```
-   */
-  async approve(params: ApproveParams): Promise<TransactionResult> {
-    if (!this.keypair) {
-      throw new Error('TokenModule.approve: a Keypair is required for write operations');
-    }
-
-    // Validate expirationLedger is in the future
-    const latestLedger = await this.server.getLatestLedger();
-    if (params.expirationLedger <= latestLedger.sequence) {
-      throw new VeriTixError(
-        VeriTixErrorCode.Unknown,
-        `expirationLedger (${params.expirationLedger}) must be greater than the current ledger (${latestLedger.sequence})`,
-      );
-    }
-
-    const sourceAccount = new Account(this.keypair.publicKey(), '0');
-
-    const args = [
-      nativeToScVal(Address.fromString(params.from),     { type: 'address' }),
-      nativeToScVal(Address.fromString(params.spender),  { type: 'address' }),
-      nativeToScVal(params.amount,                       { type: 'i128' }),
-      nativeToScVal(params.expirationLedger,             { type: 'u32' }),
-    ];
-
-    const tx = await buildContractCall(
-      this.server,
-      sourceAccount,
-      this.config.contractId,
-      'approve',
-      args,
-      this.config.networkPassphrase,
-    );
-
-    const { transaction } = await simulateTransaction(this.server, tx);
-    return submitTransaction(this.server, transaction, this.keypair);
   }
 }

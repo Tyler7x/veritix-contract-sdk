@@ -6,13 +6,9 @@
 import { Keypair, SorobanRpc, nativeToScVal, xdr } from '@stellar/stellar-sdk';
 import { VeriTixClient } from '../src/client';
 import { getTestnetConfig } from '../src/utils/network';
-import { parseSorobanError, VeriTixError, VeriTixErrorCode } from '../src/utils/errors';
-import * as transactionUtils from '../src/utils/transaction';
-import { Keypair, xdr } from '@stellar/stellar-sdk';
-import { VeriTixClient } from '../src/client';
-import { getTestnetConfig } from '../src/utils/network';
-import type { EscrowRecord } from '../src/types/index';
 import { VeriTixError, VeriTixErrorCode } from '../src/utils/errors';
+import * as transactionUtils from '../src/utils/transaction';
+import type { EscrowRecord } from '../src/types/index';
 
 const FAKE_CONTRACT = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4';
 const FAKE_ADDRESS = 'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN';
@@ -90,26 +86,12 @@ describe('EscrowModule', () => {
     });
 
     const escrow = await client.escrow.getEscrow(FAKE_ESCROW_ID);
-function makeConnectedClient(keypair: Keypair) {
-  const client = new VeriTixClient(getTestnetConfig(FAKE_CONTRACT), keypair);
-  const mockServer = {
-    simulateTransaction: jest.fn(),
-    sendTransaction: jest.fn(),
-    getTransaction: jest.fn(),
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (client as any).server = mockServer;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (client as any).connected = true;
-  return { client, mockServer };
-}
-
-describe('EscrowModule (stubs)', () => {
-  const client = new VeriTixClient(getTestnetConfig(FAKE_CONTRACT));
 
     expect(escrow).toBeNull();
   });
+
+describe('EscrowModule (stubs)', () => {
+  const client = new VeriTixClient(getTestnetConfig(FAKE_CONTRACT));
 
   it('parses an escrow record from a mocked XDR fixture', async () => {
     const { client, mockServer } = makeConnectedClient();

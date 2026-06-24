@@ -11,7 +11,6 @@
 import { VeriTixClient } from '../src/client';
 import { getTestnetConfig } from '../src/utils/network';
 import { Keypair, nativeToScVal } from '@stellar/stellar-sdk';
-import { Keypair } from '@stellar/stellar-sdk';
 
 const FAKE_CONTRACT = 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4';
 const FAKE_ADDRESS  = Keypair.random().publicKey();
@@ -47,6 +46,8 @@ describe('TokenModule', () => {
   it('name() returns string from simulation', async () => {
     mockSimulate.mockResolvedValue(simSuccess(nativeToScVal('VeriTix Token')));
     expect(await client.token.name()).toBe('VeriTix Token');
+  });
+
   it('allowance() no longer throws "not implemented" (implemented)', async () => {
     // allowance is now implemented — it will throw a network/simulation error
     // rather than "not implemented" when called without a real server.
@@ -101,6 +102,9 @@ describe('TokenModule', () => {
   });
 
   it('approve() throws without keypair', async () => {
+    await expect(client.token.approve({ from: FAKE_ADDRESS, spender: FAKE_ADDRESS, amount: 1n, expirationLedger: 1 })).rejects.toThrow();
+  });
+
   it('transfer() no longer throws "not implemented" (implemented)', async () => {
     // transfer is now implemented — it will throw a keypair error rather than "not implemented".
     await expect(
@@ -146,7 +150,6 @@ describe('TokenModule', () => {
     await expect(
       client.token.burnFrom(FAKE_ADDRESS, 0n),
     ).rejects.toThrow('amount must be greater than 0');
-    ).rejects.not.toThrow('not implemented');
   });
 });
 
